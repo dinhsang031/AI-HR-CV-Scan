@@ -1,0 +1,1354 @@
+{
+  "name": "Agent-HR-CV-Scan",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "options": {}
+      },
+      "id": "b9592024-eb99-4fd1-968b-7e963b4368fd",
+      "name": "Merge",
+      "type": "n8n-nodes-base.merge",
+      "position": [
+        220,
+        220
+      ],
+      "typeVersion": 3,
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3d049b0-5a70-4e7b-a6f2-81447da5282a",
+              "name": "profile_wanted",
+              "type": "string",
+              "value": "={{ $json.position.col_2 }}"
+            },
+            {
+              "id": "98784126-887e-4e43-92d1-59251e23e6c2",
+              "name": "time_create",
+              "value": "={{ $json.position.col_1 }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2570c94a-e09c-47b4-b71e-64c5a52c5835",
+      "name": "Profile Wanted",
+      "type": "n8n-nodes-base.set",
+      "position": [
+        -2020,
+        120
+      ],
+      "typeVersion": 3.4
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"vote\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"consideration\": {\n\t\t\t\"type\": \"string\"\n        },\n\t\t\"suitability\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}"
+      },
+      "id": "e099b1f3-9440-46f4-be9c-3cf8968cb07c",
+      "name": "Structured Output Parser",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "position": [
+        820,
+        320
+      ],
+      "typeVersion": 1.2
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy tất cả items\nconst items = $(\"Vị trí cần tuyển\").all()\n// Kiểm tra xem có dữ liệu không\nif (!items || items.length === 0) {\n  return [{ json: { position: \"Không có dữ liệu đầu vào\" } }];\n}\n// Lấy item cuối cùng\nconst lastItem = items[items.length - 1];\n// Kiểm tra xem trường có tồn tại không\nconst lastPosition = lastItem.json || \"Trường không tồn tại\";\nreturn [{ json: { position: lastPosition } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2140,
+        120
+      ],
+      "id": "e06c411a-8a90-4550-bb8a-34bf0d7e7985",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combineBy": "combineByPosition",
+        "numberInputs": 3,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        1520,
+        140
+      ],
+      "id": "2c8be02c-5fb8-4500-a3ad-21a6b67f748a",
+      "name": "Merge1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy tất cả items từ Merge Node\nconst items = $input.all();\n\n// Hàm viết hoa từng từ\nconst toTitleCase = (str) => {\n  if (!str) return \"\";\n  return str\n    .toLowerCase()\n    .split(\" \")\n    .map(word => word.charAt(0).toUpperCase() + word.slice(1))\n    .join(\" \");\n};\n\n// Làm sạch chuỗi và ép kiểu số\nconst parseNumber = (value) => {\n  if (!value) return null;\n  const cleaned = String(value)\n    .replace(/[^0-9.,-]/g, \"\") // Giữ lại số, dấu chấm, dấu phẩy, dấu trừ\n    .replace(\",\", \".\"); // Đổi dấu phẩy thành dấu chấm\n  const num = parseFloat(cleaned);\n  return isNaN(num) ? null : num;\n};\n\n// Tạo mảng các hàng dữ liệu\nconst rows = items.map(item => {\n  const output = item.json.output || {}; // Đảm bảo output tồn tại\n  return {\n    json: {\n      \"Điểm phù hợp\": parseNumber(output.vote),\n      \"Thời gian\": output.timerequest,\n      \"Vị trí ứng tuyển\": toTitleCase(output.position) || \"\",\n      \"Họ và Tên\": toTitleCase(output.fullname) || \"\",\n      \"Số điện thoại\": output.telephone || \"\",\n      \"Email\": output.email || \"\",\n      \"Nơi ở\": output.city || \"\",\n      \"Năm sinh\": output.yearofbirth || \"\",\n      \"Giới tính\": output.gender || \"\",\n      \"Bằng cấp\": output[\"Bằng cấp\"] || \"\",\n      \"Trường tốt nghiệp\": output[\"Trường tốt nghiệp\"] || \"\",\n      \"Ngành tốt nghiệp\": output[\"Ngành tốt nghiệp\"] || \"\",\n      \"Năm tốt nghiệp\": output[\"Năm tốt nghiệp\"] || \"\",\n      \"Loại tốt nghiệp\": output[\"Loại tốt nghiệp\"] || \"\",\n      \"Lịch sử làm việc\": output[\"Job History\"] || \"\",\n      \"Task công việc\": output[\"Task công việc\"] || \"\",\n      \"Kỹ năng\": output.Skills || \"\",\n      \"Chứng chỉ\": output[\"Certification\"] || \"\",\n      \"Tóm tắt\": output.consideration || \"\",\n      \"Sự phù hợp\": output.suitability || \"\",\n      \"Link Hồ sơ\": item.json.link || \"\" // Thêm trường Link Hồ sơ\n    }\n  };\n});\n\n// Trả về mảng các items (mỗi item là một hàng)\nreturn rows;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1700,
+        280
+      ],
+      "id": "a111cf96-2de8-4705-a3f4-9612f6c23e95",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1TdiOXTFLt50oxJQwvOGYH7wWOH_GOpL4V29l2l1OFlk",
+          "mode": "list",
+          "cachedResultName": "CV Scan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TdiOXTFLt50oxJQwvOGYH7wWOH_GOpL4V29l2l1OFlk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 498854524,
+          "mode": "list",
+          "cachedResultName": "Vị trí tuyển dụng",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TdiOXTFLt50oxJQwvOGYH7wWOH_GOpL4V29l2l1OFlk/edit#gid=498854524"
+        },
+        "options": {
+          "dataLocationOnSheet": {
+            "values": {
+              "rangeDefinition": "specifyRangeA1",
+              "range": "A:B"
+            }
+          },
+          "returnFirstMatch": true
+        }
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        -2280,
+        260
+      ],
+      "id": "99f47086-4591-415e-893c-01e61f90e02e",
+      "name": "Vị trí cần tuyển",
+      "executeOnce": false,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LsdUiDOjSh8amTn4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1E-aesbw4l7K8yHaO1jXZBmQjDKrF7Ehp",
+            "mode": "list",
+            "cachedResultName": "P.PTNNL - CV",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1E-aesbw4l7K8yHaO1jXZBmQjDKrF7Ehp"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1900,
+        280
+      ],
+      "id": "d48792cb-c52d-4083-ac42-0770e1300c44",
+      "name": "Tìm file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "d33te9C6y1YscoEE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1760,
+        280
+      ],
+      "id": "563ef695-c19e-4636-877d-d3f1456a167c",
+      "name": "Tải CV",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "d33te9C6y1YscoEE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "move",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "driveId": {
+          "__rl": true,
+          "value": "My Drive",
+          "mode": "list",
+          "cachedResultName": "My Drive",
+          "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+        },
+        "folderId": {
+          "__rl": true,
+          "value": "1bF-ou5oWNleDMDDwe1TerXqbTio7xQT4",
+          "mode": "id"
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1160,
+        300
+      ],
+      "id": "50a74277-48eb-4d39-9b95-7834c6e8ca8c",
+      "name": "Chuyển sang Talent pool",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "d33te9C6y1YscoEE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {
+          "keepSource": "both"
+        }
+      },
+      "id": "9a0b0ecc-02bd-4e44-9869-bab3d3c234ac",
+      "name": "Tách PDF",
+      "type": "n8n-nodes-base.extractFromFile",
+      "position": [
+        -1320,
+        160
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text}} \n  \" - Vị trí đang tuyển dụng: \" + {{$('Profile Wanted').item.json.profile_wanted + \n  \" - Thời gian yêu cầu tuyển: \" + $('Profile Wanted').item.json.time_create \n}}\n",
+        "schemaType": "manual",
+        "inputSchema": "{\n\t\"type\": \"object\",\n\t\"properties\": {\n\t\t\"telephone\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"email\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n        \"city\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"yearofbirth\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n        \"gender\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"fullname\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n\t\t\"position\": {\n\t\t\t\"type\": \"string\"\n\t\t},\n        \"timerequest\": {\n\t\t\t\"type\": \"string\"\n\t\t}\n\t}\n}",
+        "options": {
+          "systemPromptTemplate": "# Bạn là một thuật toán trích xuất thông tin chuyên nghiệp. Hãy trích xuất thông tin liên quan từ văn bản đầu vào.\n\n# Kết quả đầu ra (Output) Bắt buộc: Phải là một đối tượng JSON hợp lệ bằng tiếng Việt. Nếu không tìm thấy thông tin cho một trường nào đó, hãy bỏ qua trường đó khỏi đối tượng JSON.\n\n# Trích xuất các trường sau đây với các quy tắc cụ thể:\n\n  - fullname: Trích xuất họ và tên của ứng viên. Ưu tiên các cụm như \"Ứng viên:\", \"Họ và tên:\", hoặc dòng đầu tiên nếu là giới thiệu cá nhân. Không viết hoa toàn bộ. Viết hoa chữ cái đầu của mỗi từ. Loại bỏ chức danh, danh xưng. Thường ở đầu CV, không lấy tên trong mục tham vấn (vì đây là tên của người khác).\n  - telephone: Trích xuất số điện thoại có định dạng 10 chữ số, bắt đầu bằng \"0\". Loại bỏ khoảng trắng hoặc dấu chấm nếu có.\n  - Email: Trích xuất email của ứng viên.\n  - city: Trích xuất nơi ở của ứng viên. Nếu có các cụm như \"sống tại\", \"đang ở\", \"nơi ở\", trích phần ngay sau đó. Chỉ lấy tên tỉnh/thành phố, loại bỏ thông tin quận/huyện (nếu có).\n  - yearofbirth: Trích xuất năm sinh dưới dạng bốn chữ số. Tìm các cụm như \"năm sinh\", \"sinh năm\", \"sinh:\". Nếu không tìm thấy, không thêm vào JSON.\n  - gender: Trích xuất giới tính của ứng viên (Nam hoặc Nữ). Nếu không tìm thấy, không thêm vào JSON.\n  - position: Trích xuất tên vị trí tuyển dụng. Tìm phần ngay sau cụm \"Vị trí đang tuyển dụng\". Chỉ lấy tên vị trí và dừng lại ngay trước các cụm từ chỉ địa điểm (\"ở\", \"tại\"), kinh nghiệm (\"có kinh nghiệm\"), dấu hai chấm (:), hoặc dấu phân cách (-, ,, khoảng trắng thừa). Loại bỏ thông tin bổ sung (địa điểm, kinh nghiệm, mô tả). Chỉ lấy đúng tên vị trí. Viết hoa chữ cái đầu của mỗi từ, giữ nguyên dấu tiếng Việt.\n  - timerequest: Trích xuất ngày yêu cầu tuyển dụng. Tìm phần ngay sau cụm từ \"Thời gian yêu cầu tuyển\". Định dạng kết quả: dd/mm/yyyy. Nếu không tìm thấy, không thêm vào JSON."
+        }
+      },
+      "id": "de60eea3-2084-46d3-b821-6a6c910e8043",
+      "name": "Dữ liệu cá nhân",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        -340,
+        80
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.text }}",
+        "attributes": {
+          "attributes": [
+            {
+              "name": "Trường tốt nghiệp",
+              "description": "Output sẽ là tiếng Việt, Focus on your name of highest degree: high school or university studies.",
+              "required": true
+            },
+            {
+              "name": "Job History",
+              "description": "Output sẽ là tiếng Việt, Work history summary. Focus on your most recent work experiences. Summarize in 100 words maximum. Make a bulleted list.",
+              "required": true
+            },
+            {
+              "name": "Skills",
+              "description": "Output sẽ là tiếng Việt, Extract the candidate’s technical skills. What software and frameworks they are proficient in. Make a bulleted list.",
+              "required": true
+            },
+            {
+              "name": "Certification",
+              "description": "Output sẽ là tiếng Việt, Summary of your academic career.  Summarize in 100 words maximum and also include your grade if applicable. Make a bulleted list..",
+              "required": true
+            },
+            {
+              "name": "Ngành tốt nghiệp",
+              "description": "Output sẽ là tiếng Việt, \"Extract only the name of the major or field of highest degree of study from the university or highschool education details, ignoring the university name, graduation year, GPA, and other information.\"",
+              "required": true
+            },
+            {
+              "name": "Năm tốt nghiệp",
+              "description": "Output sẽ là tiếng Việt, Focus on your year of highest degree: graduate of high school and university studies.",
+              "required": true
+            },
+            {
+              "name": "Loại tốt nghiệp",
+              "description": "Output sẽ là tiếng Việt, Tập trung vào kết quả loại tốt nghiệp hoặc gpa (điểm tốt nghiệp của bằng cấp cao nhất: highschool hoặc university))",
+              "required": true
+            },
+            {
+              "name": "Task công việc",
+              "description": "Output sẽ là tiếng Việt, Tập trung vào các task công việc, project của ứng viên",
+              "required": true
+            },
+            {
+              "name": "Bằng cấp",
+              "description": "Output sẽ là tiếng Việt, Tập trung vào bằng cấp cao nhất của ứng viên, dữ liệu phải được sắp xếp vào nhóm bằng cấp của Việt Nam sau: Tiến sĩ, Thạc sĩ, Đại học, Cao đẳng, Trung cấp, Trung cấp nghề, Khác",
+              "required": true
+            }
+          ]
+        },
+        "options": {
+          "systemPromptTemplate": "# Bạn là một thuật toán trích xuất. Chỉ trích xuất thông tin liên quan từ văn bản. \n# Nếu bạn không biết giá trị của một thuộc tính được yêu cầu trích xuất, bạn có thể bỏ qua giá trị của thuộc tính. Sau khi trích xuất hãy chuyển sang tiếng Việt, không được có một từ tiếng Hán tự, tiếng Trung Quốc nào xuất hiện.\nĐể trống nếu không có thông tin, Chỉnh sửa lại cách viết hoa\n# Toàn bộ đầu ra chỉ bao gồm duy nhất đối tượng JSON này và không có bất kỳ văn bản, chú thích, giải thích, hoặc ký tự nào khác được thêm vào trước hoặc sau nó (ví dụ: '`')"
+        }
+      },
+      "id": "8233b96b-2c1f-4619-aed7-5dda93294010",
+      "name": "Thông tin công việc",
+      "type": "@n8n/n8n-nodes-langchain.informationExtractor",
+      "position": [
+        -300,
+        320
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "options": {
+          "summarizationMethodAndPrompts": {
+            "values": {
+              "combineMapPrompt": "=Output phải là tiếng Việt, Write a concise summary of the following, dont role play, no translate to chinese, 150 words or less. Be concise and conversational. just give information:\n\nCity: {{ $json.output.city }}\nBirthdate: {{ $json.output.yearofbirth }}\nEducational qualification: {{ $json.output.Certification }}\nJob History: {{ $json.output[\"Job History\"] }}\nSkills: {{ $json.output.Skills }}\nJob task: {{ $json.output['Task công việc'] }}\nGrateduate: {{ $json.output['Loại tốt nghiệp'] }},{{ $json.output['Ngành tốt nghiệp'] }}, {{ $json.output['Trường tốt nghiệp'] }}",
+              "prompt": "=Output phải là tiếng Việt, Write a concise summary of the following, dont role play, no translate to chinese, 150 words or less. Be concise and conversational., just give information:\n\nCity: {{ $json.output.city }}\nBirthdate: {{ $json.output.yearofbirth }}\nEducational qualification: {{ $json.output.Certification }}\nJob History: {{ $json.output[\"Job History\"] }}\nSkills: {{ $json.output.Skills }}\nJob task: {{ $json.output['Task công việc'] }}\nGrateduate: {{ $json.output['Loại tốt nghiệp'] }},{{ $json.output['Ngành tốt nghiệp'] }}, {{ $json.output['Trường tốt nghiệp'] }}"
+            }
+          }
+        }
+      },
+      "id": "fcfcfd0b-6f03-4b1e-92f2-5451bd980139",
+      "name": "Tóm tắt thông tin",
+      "type": "@n8n/n8n-nodes-langchain.chainSummarization",
+      "position": [
+        380,
+        120
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Profilo ricercato:\n{{ $('Profile Wanted').item.json.profile_wanted }}\n\nCandidato Sumarize:\n{{ $('Tóm tắt thông tin').item.json.response.text }}\n\nCandidato task, job history, skill, certification\n{{ $('Thông tin công việc').item.json.output['Task công việc'] }}\n{{ $('Thông tin công việc').item.json.output['Job History'] }}\n{{ $('Thông tin công việc').item.json.output.Skills }}\n{{ $('Thông tin công việc').item.json.output.Certification }}\nBằng cấp: {{ $('Thông tin công việc').item.json.output['Bằng cấp'] }}\n{{ $('Thông tin công việc').item.json.output['Ngành tốt nghiệp'] }}\nỞ tại: {{ $('Merge').item.json.output.city }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=# Hãy dịch và chuyển câu trả lời sang tiếng Việt. Bạn là chuyên gia về nhân sự và bạn cần hiểu liệu ứng viên có phù hợp với hồ sơ mà công ty đang tìm kiếm hay không. Chỉ cung cấp thông tin, không nhập vai, xưng tôi. \n# ****Quan trọng*** Bạn phải đánh giá từ 1 đến 10, chỉ đưa ra con số (Không có \"/10\"), trong đó 1 có nghĩa là ứng viên không đáp ứng được yêu cầu trong khi 10 có nghĩa là ứng viên lý tưởng vì phản ánh đầy đủ hồ sơ đang tìm kiếm. \n# Trong phần \"consideration\", hãy nêu lý do tại sao bạn đưa ra đánh giá đó. \n# Trong phần \"suitability\" hãy liệt kê tất sự phù hợp, điểm mạnh của ứng viên so với vị trí ứng tuyển dựa vào task công việc, kỹ năng\n# Toàn bộ đầu ra chỉ bao gồm duy nhất đối tượng JSON này và không có bất kỳ văn bản, chú thích, giải thích, hoặc ký tự nào khác được thêm vào trước hoặc sau nó (ví dụ: **, <>...)"
+            }
+          ]
+        }
+      },
+      "id": "bea32a5b-a58b-4d74-a3db-0bf634ad41d0",
+      "name": "Chuyên gia HR",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "position": [
+        680,
+        120
+      ],
+      "typeVersion": 1.5
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1TdiOXTFLt50oxJQwvOGYH7wWOH_GOpL4V29l2l1OFlk",
+          "mode": "list",
+          "cachedResultName": "CV Scan",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TdiOXTFLt50oxJQwvOGYH7wWOH_GOpL4V29l2l1OFlk/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Datapool",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1TdiOXTFLt50oxJQwvOGYH7wWOH_GOpL4V29l2l1OFlk/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Điểm phù hợp": "={{ $json['Điểm phù hợp'] }}",
+            "Thời gian": "={{ $json['Thời gian'] }}",
+            "Vị trí ứng tuyển": "={{ $json['Vị trí ứng tuyển'] }}",
+            "Họ và Tên": "={{ $json['Họ và Tên'] }}",
+            "Số điện thoại": "={{ $json['Số điện thoại'] }}",
+            "Email": "={{ $json.Email }}",
+            "Nơi ở": "={{ $json['Nơi ở'] }}",
+            "Năm sinh": "={{ $json['Năm sinh'] }}",
+            "Bằng cấp": "={{ $json['Bằng cấp'] }}",
+            "Trường tốt nghiệp": "={{ $json['Trường tốt nghiệp'] }}",
+            "Ngành tốt nghiệp": "={{ $json['Ngành tốt nghiệp'] }}",
+            "Năm tốt nghiệp": "={{ $json['Năm tốt nghiệp'] }}",
+            "Loại tốt nghiệp": "={{ $json['Loại tốt nghiệp'] }}",
+            "Lịch sử làm việc": "={{ $json['Lịch sử làm việc'] }}",
+            "Task công việc": "={{ $json['Task công việc'] }}",
+            "Kỹ năng": "={{ $json['Kỹ năng'] }}",
+            "Chứng chỉ": "={{ $json['Chứng chỉ'] }}",
+            "Tóm tắt": "={{ $json['Tóm tắt'] }}",
+            "Sự phù hợp": "={{ $json['Sự phù hợp'] }}",
+            "Link Hồ sơ": "={{ $json['Link Hồ sơ'] }}",
+            "Giới tính": "={{ $json['Giới tính'] }}"
+          },
+          "matchingColumns": [
+            "table"
+          ],
+          "schema": [
+            {
+              "id": "Điểm phù hợp",
+              "displayName": "Điểm phù hợp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Thời gian",
+              "displayName": "Thời gian",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Vị trí ứng tuyển",
+              "displayName": "Vị trí ứng tuyển",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Họ và Tên",
+              "displayName": "Họ và Tên",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Năm sinh",
+              "displayName": "Năm sinh",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Giới tính",
+              "displayName": "Giới tính",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Số điện thoại",
+              "displayName": "Số điện thoại",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Nơi ở",
+              "displayName": "Nơi ở",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Bằng cấp",
+              "displayName": "Bằng cấp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Trường tốt nghiệp",
+              "displayName": "Trường tốt nghiệp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Ngành tốt nghiệp",
+              "displayName": "Ngành tốt nghiệp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Năm tốt nghiệp",
+              "displayName": "Năm tốt nghiệp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Loại tốt nghiệp",
+              "displayName": "Loại tốt nghiệp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Lịch sử làm việc",
+              "displayName": "Lịch sử làm việc",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Task công việc",
+              "displayName": "Task công việc",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Kỹ năng",
+              "displayName": "Kỹ năng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Chứng chỉ",
+              "displayName": "Chứng chỉ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Tóm tắt",
+              "displayName": "Tóm tắt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sự phù hợp",
+              "displayName": "Sự phù hợp",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Link Hồ sơ",
+              "displayName": "Link Hồ sơ",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "TA duyệt nội dung",
+              "displayName": "TA duyệt nội dung",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "Ghi chú",
+              "displayName": "Ghi chú",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "CV Tiềm năng",
+              "displayName": "CV Tiềm năng",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "cellFormat": "RAW",
+          "useAppend": true
+        }
+      },
+      "id": "94d6d040-f550-468e-bc85-7414260ecdcb",
+      "name": "Tổng hợp dữ liệu và DTB",
+      "type": "n8n-nodes-base.googleSheets",
+      "position": [
+        1900,
+        280
+      ],
+      "typeVersion": 4.5,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "LsdUiDOjSh8amTn4",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Tải CV').item.json.id }}",
+          "mode": "id"
+        },
+        "newUpdatedFileName": "={{ $('Dữ liệu cá nhân').item.json.output.timerequest }} - {{ $('Dữ liệu cá nhân').item.json.output.position }} - {{ $('Dữ liệu cá nhân').item.json.output.fullname }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1000,
+        300
+      ],
+      "id": "d08ce0a0-bb57-4fa9-b3e9-3dafc37a4688",
+      "name": "Đổi tên file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "d33te9C6y1YscoEE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// This function will create an array of file links (view links) from the given Google Drive folder\nreturn items.map(file => {\n  return { json: { 'link': `https://drive.google.com/file/d/${file.json.id}/view`, 'name': file.json.name } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        300
+      ],
+      "id": "552e3107-3875-4dcc-9cbf-f322a37ec9ab",
+      "name": "Code2"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1E-aesbw4l7K8yHaO1jXZBmQjDKrF7Ehp",
+            "mode": "list",
+            "cachedResultName": "P.PTNNL - CV",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1E-aesbw4l7K8yHaO1jXZBmQjDKrF7Ehp"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -2480,
+        300
+      ],
+      "id": "91a07c9e-fc3c-42f0-9a00-4feda98cbbf0",
+      "name": "Tìm file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "d33te9C6y1YscoEE",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "*/5 8-17 * * 1-6"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2660,
+        300
+      ],
+      "id": "fcdd72cc-c118-487c-8005-e5c0c09d2ef1",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-flash-preview-04-17-thinking",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        500,
+        540
+      ],
+      "id": "1bf03602-2007-4b74-891c-6ea6e63c6172",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FHwgHQS4C57Ky4hu",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "67a843c9-b3c4-42e9-8f3b-a88247831f31",
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "notEmpty",
+                      "singleValue": true
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.text }}",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "empty",
+                      "singleValue": true
+                    },
+                    "id": "ed021a8c-7fa2-40ea-9db1-275d4ba16fc7"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "OCR"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1120,
+        100
+      ],
+      "id": "4f40568a-8a51-43cd-891e-f983af832379",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f5963538-0e98-43e7-80f8-13641835ac93",
+              "name": "text",
+              "value": "={{ $json.text }}\n{{ $json.ParsedResults[0].ParsedText }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -660,
+        80
+      ],
+      "id": "405a18b6-5bde-45db-b295-986c7de51d76",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/parse/image",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "K82546793688957"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "file",
+              "inputDataFieldName": "data"
+            },
+            {
+              "name": "filetype",
+              "value": "pdf"
+            },
+            {
+              "name": "OCREngine",
+              "value": "2"
+            },
+            {
+              "name": "isOverlayRequired",
+              "value": "false"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -880,
+        240
+      ],
+      "name": "OCR API",
+      "id": "5dd224a4-6204-4723-ba0d-57eaed9d38d0"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.name }}",
+                    "rightValue": "pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    },
+                    "id": "4c3a590f-03d9-4eef-9aec-33957cbd1d35"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": ".pdf"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "43c20536-aa2d-4fce-83e8-5f967662381e",
+                    "leftValue": "={{ $json.name }}",
+                    "rightValue": "=.docx",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "doc"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -1600,
+        280
+      ],
+      "id": "1531086e-b82e-4fdc-a11b-f2d6322869c5",
+      "name": "Switch1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy tất cả items\nconst items = $(\"Vị trí cần tuyển\").all()\n// Kiểm tra xem có dữ liệu không\nif (!items || items.length === 0) {\n  return [{ json: { position: \"Không có dữ liệu đầu vào\" } }];\n}\n// Lấy item cuối cùng\nconst lastItem = items[items.length - 1];\n// Kiểm tra xem trường có tồn tại không\nconst lastPosition = lastItem.json || \"Trường không tồn tại\";\nreturn [{ json: { position: lastPosition } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2160,
+        620
+      ],
+      "id": "72045d11-3be7-4cb3-9815-d196ddeb9799",
+      "name": "Code3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// This function will create an array of file links (view links) from the given Google Drive folder\nreturn items.map(file => {\n  return { json: { 'link': `https://drive.google.com/file/d/${file.json.id}/view`, 'name': file.json.name } };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1380,
+        680
+      ],
+      "id": "69eefb2f-b9e7-4201-a1c2-4ef43bc5779b",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Lấy tất cả items từ Merge Node\nconst items = $input.all();\n\n// Hàm viết hoa từng từ\nconst toTitleCase = (str) => {\n  if (!str) return \"\";\n  return str\n    .toLowerCase()\n    .split(\" \")\n    .map(word => word.charAt(0).toUpperCase() + word.slice(1))\n    .join(\" \");\n};\n\n// Làm sạch chuỗi và ép kiểu số\nconst parseNumber = (value) => {\n  if (!value) return null;\n  const cleaned = String(value)\n    .replace(/[^0-9.,-]/g, \"\") // Giữ lại số, dấu chấm, dấu phẩy, dấu trừ\n    .replace(\",\", \".\"); // Đổi dấu phẩy thành dấu chấm\n  const num = parseFloat(cleaned);\n  return isNaN(num) ? null : num;\n};\n\n// Tạo mảng các hàng dữ liệu\nconst rows = items.map(item => {\n  const output = item.json.output || {}; // Đảm bảo output tồn tại\n  return {\n    json: {\n      \"Điểm phù hợp\": parseNumber(output.vote),\n      \"Thời gian\": output.timerequest,\n      \"Vị trí ứng tuyển\": toTitleCase(output.position) || \"\",\n      \"Họ và Tên\": toTitleCase(output.fullname) || \"\",\n      \"Số điện thoại\": output.telephone || \"\",\n      \"Email\": output.email || \"\",\n      \"Nơi ở\": output.city || \"\",\n      \"Năm sinh\": output.yearofbirth || \"\",\n      \"Giới tính\": output.gender || \"\",\n      \"Bằng cấp\": output[\"Bằng cấp\"] || \"\",\n      \"Trường tốt nghiệp\": output[\"Trường tốt nghiệp\"] || \"\",\n      \"Ngành tốt nghiệp\": output[\"Ngành tốt nghiệp\"] || \"\",\n      \"Năm tốt nghiệp\": output[\"Năm tốt nghiệp\"] || \"\",\n      \"Loại tốt nghiệp\": output[\"Loại tốt nghiệp\"] || \"\",\n      \"Lịch sử làm việc\": output[\"Job History\"] || \"\",\n      \"Task công việc\": output[\"Task công việc\"] || \"\",\n      \"Kỹ năng\": output.Skills || \"\",\n      \"Chứng chỉ\": output[\"Certification\"] || \"\",\n      \"Tóm tắt\": output.consideration || \"\",\n      \"Sự phù hợp\": output.suitability || \"\",\n      \"Link Hồ sơ\": item.json.link || \"\" // Thêm trường Link Hồ sơ\n    }\n  };\n});\n\n// Trả về mảng các items (mỗi item là một hàng)\nreturn rows;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1720,
+        680
+      ],
+      "id": "440a99f8-c131-47bd-9430-a9d09035c0db",
+      "name": "Code5"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Tóm tắt thông tin",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Profile Wanted": {
+      "main": [
+        [
+          {
+            "node": "Tìm file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Chuyên gia HR",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Profile Wanted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge1": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Tổng hợp dữ liệu và DTB",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Vị trí cần tuyển": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tìm file": {
+      "main": [
+        [
+          {
+            "node": "Tải CV",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tải CV": {
+      "main": [
+        [
+          {
+            "node": "Switch1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuyển sang Talent pool": {
+      "main": [
+        [
+          {
+            "node": "Code2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tách PDF": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Dữ liệu cá nhân": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Thông tin công việc": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Tóm tắt thông tin": {
+      "main": [
+        [
+          {
+            "node": "Chuyên gia HR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chuyên gia HR": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Đổi tên file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Đổi tên file": {
+      "main": [
+        [
+          {
+            "node": "Chuyển sang Talent pool",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code2": {
+      "main": [
+        [
+          {
+            "node": "Merge1",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Tìm file1": {
+      "main": [
+        [
+          {
+            "node": "Vị trí cần tuyển",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Tìm file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chuyên gia HR",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Tóm tắt thông tin",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Thông tin công việc",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Dữ liệu cá nhân",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "OCR API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Dữ liệu cá nhân",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Thông tin công việc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR API": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch1": {
+      "main": [
+        [
+          {
+            "node": "Tách PDF",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cfc89c2e-9f96-4002-bb36-6a04bc8b7b4b",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "94499bb8ac18a8f5baa48516d3e4e8a4d9f1e5c3ecc14dd7530564c0aa83e2b0"
+  },
+  "id": "yNYT0VZTH3jXXgpg",
+  "tags": []
+}
